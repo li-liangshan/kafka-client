@@ -1,0 +1,33 @@
+{
+  "name": "@coupler/kafka-client",
+  "version": "1.0.0",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "directories": {
+    "test": "test"
+  },
+  "devDependencies": {
+    "@coupler/typescript": "^2.5.2",
+    "@types/lodash": "^4.14.92",
+    "@types/node": "^8.5.7",
+    "ava": "^0.24.0",
+    "nyc": "^11.4.1"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "liliangshan@blacklake.cn",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "debug": "^3.1.0",
+    "kafka-node": "^2.3.1",
+    "lodash": "^4.17.4"
+  },
+  "ava": {
+    "files": ["lib/test/**/*.spec.js"],
+    "source": ["lib/**/*.js", "!lib/test/**/*.js"],
+    "require": ["@coupler/runtime"],
+    "verbose": true
+  }
+}
