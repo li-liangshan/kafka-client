@@ -6,7 +6,7 @@ import { Promise } from 'es6-promise';
 import { resolve, sep } from 'path';
 import { error } from 'util';
 
-const log = debug('coupler:kafka-mq:client');
+const log = debug('coupler:kafka-mq:KafkaClient');
 
 export interface IKafkaOptions {
   clientId?: string;
@@ -46,7 +46,7 @@ export interface IFetchRequest {
   maxTickMessages?: number;
 }
 
-export class KafkaClient {
+export class Client {
   closing: boolean = false;
   connecting: boolean = false;
   connected: boolean = false;
@@ -61,11 +61,11 @@ export class KafkaClient {
 
   async connect() {
     if (this.connecting) {
-      log('connect request ignored. KafkaClient is currently connecting!');
+      log('connect request ignored. client is currently connecting!');
       return;
     }
-
     this.connecting = true;
+    debug('ConsumerStreamClient start to connect...');
     await this.onConnecting();
     this.connecting = false;
     this.connected = true;
@@ -340,10 +340,10 @@ export class KafkaClient {
     });
   }
 
-  async getKafkaClientInstance() {
+  async getKafkaInstance() {
     await this.checkOrConnect('getKafkaClientInstance');
     if (!this.clientInstance) {
-      throw new Error('kafkaClient connect failed!!!');
+      throw new Error('kafka client is null !!!');
     }
     return this.clientInstance;
   }

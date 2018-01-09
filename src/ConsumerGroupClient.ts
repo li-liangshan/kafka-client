@@ -50,6 +50,7 @@ export class ConsumerGroupClient extends ConsumerClient {
       return this.consumerInstance;
     }
     this.connected = false;
+    this.consumerInstance = null;
     const consumerGroup = new Kafka.ConsumerGroup(this.options, this.topics);
     return new Promise((resolve, reject) => {
       consumerGroup.on('connect', () => {
