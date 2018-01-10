@@ -91,7 +91,7 @@ export class ConsumerStreamClient {
 
   async close(force: boolean = false) {
     if (this.closing) {
-      debug('close request ignored. client has been closed currently.');
+      debug('close request ignored. client is currently closing.');
       return;
     }
     this.closing = true;
@@ -101,6 +101,7 @@ export class ConsumerStreamClient {
       this.closing = false;
       this.connecting = false;
       this.streamInstance = null;
+      debug('client close success...');
       return result;
     } catch (err) {
       this.closing = false;

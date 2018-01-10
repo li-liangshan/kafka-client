@@ -1,12 +1,9 @@
 
 import * as Kafka from 'kafka-node';
-import debug from 'debug';
+import * as Debug from 'debug';
 import * as _ from 'lodash';
-import { Promise } from 'es6-promise';
-import { resolve, sep } from 'path';
-import { error } from 'util';
 
-const log = debug('coupler:kafka-mq:KafkaClient');
+const debug = Debug('coupler:kafka-mq:client');
 
 export interface IKafkaOptions {
   clientId?: string;
@@ -50,7 +47,6 @@ export class Client {
   closing: boolean = false;
   connecting: boolean = false;
   connected: boolean = false;
-  reconnecting: boolean = false;
 
   options: IKafkaOptions;
   private clientInstance: any;
@@ -61,85 +57,87 @@ export class Client {
 
   async connect() {
     if (this.connecting) {
-      log('connect request ignored. client is currently connecting!');
+      debug('connect request ignored. client is currently connecting!');
       return;
     }
     this.connecting = true;
-    debug('ConsumerStreamClient start to connect...');
-    await this.onConnecting();
-    this.connecting = false;
-    this.connected = true;
+    debug('client start to connect...');
+    try {
+      this.clientInstance = await this.onConnected();
+      debug('client onConnected!!!');
+      this.connected = true;
+    } catch (err) {
+      debug('client connect failed...');
+      this.clientInstance = null;
+      this.connected = false;
+    } finally {
+      this.connecting = false;
+    }
   }
 
-  async onConnecting(): Promise<any> {
+  async onConnected(): Promise<any> {
     if (this.connected && this.clientInstance) {
       return this.clientInstance;
     }
-    this.clientInstance = new Kafka.KafkaClient(this.options);
-    this.clientInstance.on('close', (instance) => this.onClosed(instance));
-    this.clientInstance.on('reconnect', () => this.onReconnecting());
-    try {
-      let isConnected: any = false;
-      isConnected = await new Promise((resolve, reject) => {
-        this.clientInstance.on('connect', () => resolve(true));
-        this.clientInstance.on('error', (error) => reject(error));
-      });
-      if (isConnected === true) {
-       return this.onConnected();
-      }
-      return this.disConnected('KafkaClient disconnected!');
-    } catch (err) {
-      return this.disConnected(err);
-    }
-
-  }
-
-  async onConnected() {
-    log('KafkaClient connected!');
-    this.connecting = false;
-    this.connected = true;
-  }
-
-  async disConnected(error) {
-    log(`KafkaClient connecting error: ${JSON.stringify(error)}`);
-    this.connecting = false;
     this.connected = false;
     this.clientInstance = null;
-  }
-
-  async onReconnecting() {
-    this.reconnecting = true;
-    this.connecting = true;
-    this.connected = false;
-    this.closing = false;
+    const client = new Kafka.KafkaClient(this.options);
+    return new Promise((resolve, reject) => {
+      if (!client) {
+        return reject('kafka instance create failed...')
+      }
+      client.on('ready', () => resolve(client));
+    });
   }
 
   async close() {
-    log('close KafkaClient!');
+    if (this.closing) {
+      debug('close request ignored. client has been closed currently.');
+      return;
+    }
     this.closing = true;
+    try {
+      const result = await this.onClosed();
+      this.connected = false;
+      this.clientInstance = null;
+      this.closing = false;
+      this.connecting = false;
+      debug('client close success...');
+      return result;
+    } catch (err) {
+      this.closing = false;
+      debug(`client close failed, err => ${JSON.stringify(err)}`);
+      throw err;
+    }
+  }
+  async onClosed(instance?: any) {
+    if (!this.closing) {
+      debug('close request ignored, closing status must be true...');
+      return null;
+    }
+    if (!this.clientInstance) {
+      this.connected = false;
+      debug('close request refused. client has been closed currently.');
+      return null;
+    }
     return new Promise((resolve, reject) => {
       this.clientInstance.close(resolve);
     });
   }
-  async onClosed(instance?: any) {
-    log('closed KafkaClient!');
-    this.closing = false;
-    this.connected = false;
-  }
 
-  async checkOrConnect(funName: string) {
-    log(`check the client Connected`);
+ private async checkOrConnect(funName: string) {
+    debug(`check the client Connected`);
     if (!this.connected) {
-      log(`KafkaClient is not connected [${funName}]`);
-      log('KafkaClient start connecting ....');
+      debug(`KafkaClient is not connected [${funName}]`);
+      debug('KafkaClient start connecting ....');
       await this.connect();
     }
-    log(`KafkaClient connected before ${funName}`);
+    debug(`KafkaClient connected before ${funName}`);
   }
 
   async sendProduceRequest(request: ISendRequest) {
     await this.checkOrConnect('sendRequest');
-    log('sending request!');
+    debug('sending request!');
     return new Promise((resolve, reject) => {
       this.clientInstance.sendProduceRequest(
         request.payloads,
@@ -214,10 +212,10 @@ export class Client {
     });
   }
 
-  async getDescribeGroups(groups) {
+  async getDescribeGroups(groupIds) {
     await this.checkOrConnect('getDescribeGroups');
     return new Promise((resolve, reject) => {
-      this.clientInstance.getDescribeGroups(groups, (err, result) => {
+      this.clientInstance.getDescribeGroups(groupIds, (err, result) => {
         if (err) {
           return reject(err);
         }
@@ -232,10 +230,10 @@ export class Client {
     return this.clientInstance.sendFetchRequest(consumer, payloads, fetchMaxWaitMs, fetchMinBytes, maxTickMessages);
   }
 
-  async sendOffsetCommitRequest(group, payloads) {
+  async sendOffsetCommitRequest(groupId, payloads) {
     await this.checkOrConnect('sendOffsetCommitRequest');
     return new Promise((resolve, reject) => {
-      this.clientInstance.sendOffsetCommitRequest(group, payloads, (err) => {
+      this.clientInstance.sendOffsetCommitRequest(groupId, payloads, (err) => {
         if (err) {
           return reject(err);
         }
@@ -244,10 +242,10 @@ export class Client {
     });
   }
 
-  async sendOffsetCommitV2Request(group, generationId, memberId, payloads) {
+  async sendOffsetCommitV2Request(groupId, generationId, memberId, payloads) {
     await this.checkOrConnect('sendOffsetCommitV2Request');
     return new Promise((resolve, reject) => {
-      this.clientInstance.sendOffsetCommitV2Request(group, generationId, memberId, payloads, (err) => {
+      this.clientInstance.sendOffsetCommitV2Request(groupId, generationId, memberId, payloads, (err) => {
         if (err) {
           return reject(err);
         }
@@ -256,10 +254,10 @@ export class Client {
     });
   }
 
-  async sendOffsetFetchV1Request(group, payloads) {
+  async sendOffsetFetchV1Request(groupId, payloads) {
     await this.checkOrConnect('sendOffsetFetchV1Request');
     return new Promise((resolve, reject) => {
-      this.clientInstance.sendOffsetFetchV1Request(group, payloads, (err) => {
+      this.clientInstance.sendOffsetFetchV1Request(groupId, payloads, (err) => {
         if (err) {
           return reject(err);
         }
@@ -268,10 +266,10 @@ export class Client {
     });
   }
 
-  async sendOffsetFetchRequest(group, payloads) {
+  async sendOffsetFetchRequest(groupId, payloads) {
     await this.checkOrConnect('sendOffsetFetchV1Request');
     return new Promise((resolve, reject) => {
-      this.clientInstance.sendOffsetFetchRequest(group, payloads, (err) => {
+      this.clientInstance.sendOffsetFetchRequest(groupId, payloads, (err) => {
         if (err) {
           return reject(err);
         }
@@ -343,7 +341,7 @@ export class Client {
   async getKafkaInstance() {
     await this.checkOrConnect('getKafkaClientInstance');
     if (!this.clientInstance) {
-      throw new Error('kafka client is null !!!');
+      throw new Error('kafka instance is null !!!');
     }
     return this.clientInstance;
   }
