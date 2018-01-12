@@ -40,6 +40,33 @@ export class ConsumerGroupStreamClient {
     }
   }
 
+  async close(): Promise<any> {
+    if (this.closing) {
+      debug('close request ignored. client is currently closing...');
+      return;
+    }
+    this.closing = true;
+    try {
+      const result = await this.onClosed();
+      this.closing = false;
+      this.connected = false;
+      this.connecting = false;
+      this.groupInstance = null;
+      return result;
+    } catch (err) {
+      debug(`client close failed err=${JSON.stringify(err)}`);
+      this.closing = false;
+      throw err;
+    }
+  }
+
+  async getConsumerGroupStream() {
+    if (!this.connected || !this.groupInstance) {
+      await this.connect();
+    }
+    return this.groupInstance;
+  }
+
   private async onConnected(): Promise<any> {
     if (this.connected && this.groupInstance) {
       return;
@@ -82,26 +109,6 @@ export class ConsumerGroupStreamClient {
     }
     this.topics = topicArr;
     return this.connect();
-  }
-
-  async close(): Promise<any> {
-    if (this.closing) {
-      debug('close request ignored. client is currently closing...');
-      return;
-    }
-    this.closing = true;
-    try {
-      const result = await this.onClosed();
-      this.closing = false;
-      this.connected = false;
-      this.connecting = false;
-      this.groupInstance = null;
-      return result;
-    } catch (err) {
-      debug(`client close failed err=${JSON.stringify(err)}`);
-      this.closing = false;
-      throw err;
-    }
   }
 
  private async onClosed(): Promise<any> {

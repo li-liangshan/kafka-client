@@ -2,7 +2,6 @@ import * as Kafka from 'kafka-node';
 import * as Debug from 'debug';
 import * as _ from 'lodash';
 import { generateTrimStringArray } from './helper';
-import { Promise } from 'es6-promise';
 
 const debug = Debug('coupler:kafka-mq:ConsumerStreamClient');
 
@@ -71,22 +70,6 @@ export class ConsumerStreamClient {
     debug('start reconnecting !!!');
     this.autoReconnectCount -= 1;
     return this.connect();
-  }
-
-  private init(client: any, topics: string | string[], options: any): void {
-    this.options = options;
-    this.autoReconnectCount =  options.autoReconnectCount || 0;
-    const topicArr = generateTrimStringArray(topics);
-    if (!topicArr || !topicArr.length) {
-      throw new Error('topics must not be null, [], [" "] or ""...');
-    }
-    this.topics = topicArr;
-
-    if (!client) {
-      throw new Error('kafka instance must not be null!');
-    }
-
-    this.kafkaClient = client;
   }
 
   async close(force: boolean = false) {
@@ -164,5 +147,19 @@ export class ConsumerStreamClient {
     }
   }
 
+  private init(client: any, topics: string | string[], options: any): void {
+    this.options = options;
+    this.autoReconnectCount =  options.autoReconnectCount || 0;
+    const topicArr = generateTrimStringArray(topics);
+    if (!topicArr || !topicArr.length) {
+      throw new Error('topics must not be null, [], [" "] or ""...');
+    }
+    this.topics = topicArr;
 
+    if (!client) {
+      throw new Error('kafka instance must not be null!');
+    }
+
+    this.kafkaClient = client;
+  }
 }

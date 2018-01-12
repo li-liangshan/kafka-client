@@ -3,7 +3,6 @@ import debug from 'debug';
 import { isFunction } from 'lodash';
 import { ConsumerClient } from './ConsumerClient';
 import { promiseFn } from './helper';
-import { Promise } from 'es6-promise';
 
 const log = debug('coupler:kafka-mq:ConsumerGroupClient');
 
@@ -64,9 +63,6 @@ export class ConsumerGroupClient extends ConsumerClient {
 
   // todo 这里需要进一步处理，
   async scheduleReconnect(timeout: number) {
-    // if (this.connecting) {
-    //   throw new Error('ConsumerGroupClient be connecting ,not completed!!!');
-    // }
     while (this.connecting) {
       log('ConsumerGroupClient is connecting!');
     }
@@ -84,6 +80,38 @@ export class ConsumerGroupClient extends ConsumerClient {
       this.consumerInstance.sendOffsetCommitRequest,
       this.consumerInstance,
     )(commits);
+  }
+
+  async addTopics(topics: string | string[]) {
+    if (!topics) {
+      return null;
+    }
+    if (typeof topics === 'string' && !Boolean(topics.trim())) {
+      return null;
+    }
+    if (!this.connected) {
+      await this.connect();
+    }
+    const topicArr: string[] = typeof topics === 'string' ? [topics] : topics.filter((topic) => topic.trim());
+    if (!topicArr.length) {
+      log('ConsumerClient no topic added due to no topics!');
+      return null;
+    }
+    return new Promise((resolve, reject) => {
+      this.consumerInstance.addTopics(topicArr, (err, addedTopics) => {
+        if (err) {
+          return reject(err);
+        }
+        return resolve(addedTopics);
+      });
+    });
+  }
+
+  async pauseTopic(topics: string[]) {
+    return;
+  }
+  async resumeTopics(topics: string[]) {
+    return;
   }
 
   private init(options: any, topics: string[]) {

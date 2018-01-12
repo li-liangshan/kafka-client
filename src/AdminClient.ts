@@ -1,9 +1,9 @@
 import * as Kafka from 'kafka-node';
 import * as Debug from 'debug';
 import * as _ from 'lodash';
+import { Promise } from 'es6-promise';
 
 const debug = Debug('coupler:kafka-mq:AdminClient');
-
 
 export class AdminClient {
 
@@ -108,6 +108,26 @@ export class AdminClient {
     }
     return new Promise((resolve, reject) => {
       this.adminInstance.close(force, resolve);
+    });
+  }
+
+  async listGroups() {
+    if (!this.connected || !this.adminInstance) {
+      this.connected = false;
+      await this.connect();
+    }
+    return new Promise((resolve, reject) => {
+      this.adminInstance.listGroups(resolve);
+    });
+  }
+
+  async describeGroups(consumerGroups) {
+    if (!this.connected || !this.adminInstance) {
+      this.connected = false;
+      await this.connect();
+    }
+    return new Promise((resolve, reject) => {
+      this.adminInstance.describeGroups(consumerGroups, resolve);
     });
   }
 }

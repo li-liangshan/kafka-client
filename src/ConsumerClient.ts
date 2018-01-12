@@ -1,10 +1,10 @@
 import * as Kafka from 'kafka-node';
-import debug from 'debug';
+import * as Debug from 'debug';
 import { isFunction } from 'lodash';
 import { promiseFn } from './helper';
-import { Promise } from 'es6-promise';
+import { resolve } from 'dns';
 
-const log = debug('coupler:kafka-mq:ConsumerClient');
+const debug = Debug('LLS:testSpec');
 
 export type MessageHandler = (message: any) => void;
 export type ErrorHandler = (error: any) => void;
@@ -14,43 +14,40 @@ export class ConsumerClient {
   closing: boolean = false;
   connecting: boolean = false;
   connected: boolean = false;
-  reconnecting: boolean = false;
 
   consumerInstance: any = null;
   options: any;
-  autoReconnectCount: number;
+  autoReconnect: boolean;
   kafkaClient: any;
 
   private isHighLevel: boolean;
 
-  constructor(options: any, isHighLevel?: boolean, autoReconnectCount?: number) {
+  constructor(options: any, isHighLevel?: boolean, autoReconnect?: boolean) {
     this.options = options;
     this.kafkaClient = options.client;
     this.isHighLevel = isHighLevel || false;
-    this.autoReconnectCount = autoReconnectCount || 0;
+    this.autoReconnect = autoReconnect || false;
 
     // this.connect();
   }
 
   async connect() {
     if (this.connecting) {
-      log('connect request ignored. ConsumerClient is currently connecting!');
+      debug('connect request ignored. ConsumerClient is currently connecting!');
       return;
     }
     this.connecting = true;
-    log(`${this.isHighLevel ? 'HighLevelConsumer' : 'Consumer'} connecting...`);
+    debug(`${this.isHighLevel ? 'HighLevelConsumer' : 'Consumer'} connecting...`);
     try {
       this.consumerInstance = await this.onConnected();
-      log(`${this.isHighLevel ? 'HighLevelConsumer' : 'Consumer'} onConnected!`);
+      debug(`${this.isHighLevel ? 'HighLevelConsumer' : 'Consumer'} onConnected!`);
       this.connected = true;
+      this.connecting = false;
     } catch (err) {
-      log(`${this.isHighLevel ? 'HighLevelProducer' : 'Producer'} connect failed!!!`);
-      log(`failed err ==> ${JSON.stringify(err)}`);
+      debug(`${this.isHighLevel ? 'HighLevelProducer' : 'Producer'} connect failed!!!`);
+      debug(`failed err ==> ${JSON.stringify(err)}`);
       this.connecting = false;
       await this.onReconnecting();
-    } finally {
-      this.connecting = false;
-      this.reconnecting = false;
     }
   }
 
@@ -65,21 +62,23 @@ export class ConsumerClient {
   }
 
   async onReconnecting() {
-    if (this.reconnecting) {
-      log('reconnect request ignored. ConsumerClient is currently reconnecting!');
+    if (this.connecting) {
+      debug('reconnect request ignored. ConsumerClient is currently reconnecting!');
       return;
     }
     if (this.connected) {
-      log('reconnect request ignored. ConsumerClient have been connected!');
+      debug('reconnect request ignored. ConsumerClient have been connected!');
       return;
     }
-    this.reconnecting = true;
-    if (this.autoReconnectCount <= 0) {
+    if (!this.autoReconnect) {
       return;
     }
-    log('start reconnecting [ConsumerClient]!!!');
-    this.autoReconnectCount -= 1;
+    debug('start reconnecting [ConsumerClient]!!!');
     return this.connect();
+  }
+
+  isConnected() {
+    return this.connected;
   }
 
   async close(force: boolean = false) {
@@ -92,11 +91,11 @@ export class ConsumerClient {
       this.consumerInstance = null;
       this.connected = false;
       this.closing = false;
-      return Promise.resolve(result);
+      return result;
     } catch (err) {
       this.closing = false;
-      log(`close ConsumerClient failed; err => ${JSON.stringify(err)}`);
-      return Promise.reject(err);
+      debug(`close ConsumerClient failed; err => ${JSON.stringify(err)}`);
+      throw err;
     }
   }
 
@@ -148,7 +147,7 @@ export class ConsumerClient {
     }
     const topicArr: string[] = typeof topics === 'string' ? [topics] : topics.filter((topic) => topic.trim());
     if (!topicArr.length) {
-      log('ConsumerClient no topic added due to no topics!');
+      debug('ConsumerClient no topic added due to no topics!');
       return null;
     }
     return new Promise((resolve, reject) => {
@@ -163,11 +162,11 @@ export class ConsumerClient {
 
   async removeTopics(topics: string[]) {
     if (!this.connected || !this.consumerInstance) {
-      log('ConsumerClient disConnected, not topics can be removed!');
+      debug('ConsumerClient disConnected, not topics can be removed!');
       return null;
     }
     if (!topics.length) {
-      log('ConsumerClient no topic removed due to no topics!');
+      debug('ConsumerClient no topic removed due to no topics!');
       return null;
     }
     // return new Promise((resolve, reject) => {
@@ -186,7 +185,7 @@ export class ConsumerClient {
       await this.connect();
     }
     if (topic.trim()) {
-      log('ConsumerClient no topic removed due to no topics!');
+      debug('ConsumerClient no topic removed due to no topics!');
       throw new Error('topic can not be \' \'');
     }
     return this.consumerInstance.setOffset(topic, partition, offset);
@@ -211,7 +210,7 @@ export class ConsumerClient {
       await this.connect();
     }
     if (!this.isHighLevel) {
-      log('topic payloads can not be obtained due to not HighLevelConsumer');
+      debug('topic payloads can not be obtained due to not HighLevelConsumer');
       return;
     }
     return this.consumerInstance.getTopicPayloads();
@@ -221,7 +220,10 @@ export class ConsumerClient {
     if (!this.connected) {
       await this.connect();
     }
-    return this.consumerInstance.on('message', (message) => this.createMessageHandler(handler));
+    return new Promise((resolve, reject) => {
+      this.consumerInstance.on('message', (message) => resolve(message));
+    });
+    // return this.consumerInstance.on('message', (message) => this.createMessageHandler(handler));
   }
 
   async handleError(errorHandler: ErrorHandler) {
@@ -239,69 +241,69 @@ export class ConsumerClient {
   }
 
   private async createMessageHandler(handler: MessageHandler) {
-    log('start to create messageHandler!');
+    debug('start to create messageHandler!');
     return (message) => this.onMessage(message, handler);
   }
 
   private async createErrorHandler(errorHandler: ErrorHandler) {
-    log('start to create errorHandler!');
+    debug('start to create errorHandler!');
     return (error) => this.onError(error, errorHandler);
   }
 
   private async createOffsetOutOfRange(offsetHandler: OffsetOutOfRangeHandler) {
-    log('start to create offsetOutOfRangeHandler!');
+    debug('start to create offsetOutOfRangeHandler!');
     return (topic) => this.onOffsetOutOfRange(topic, offsetHandler);
   }
 
   private onMessage(message: any, handler: MessageHandler) {
-    log(`message is being handled! message=>${JSON.stringify(message)}`);
+    debug(`message is being handled! message=>${JSON.stringify(message)}`);
     if (!message) {
       return;
     }
 
     if (!isFunction(handler)) {
-      log('message omitted due to no messageHandler!!!');
+      debug('message omitted due to no messageHandler!!!');
       return;
     }
 
     try {
       handler(message);
     } catch (err) {
-      log(`handle message failed due to error => ${JSON.stringify(err)}`);
+      debug(`handle message failed due to error => ${JSON.stringify(err)}`);
     }
   }
 
   private onError(error: any, handler: ErrorHandler) {
-    log(`consumerClient error is being handled! error=>${JSON.stringify(error)}`);
+    debug(`consumerClient error is being handled! error=>${JSON.stringify(error)}`);
     if (!error) {
       return;
     }
 
     if (!isFunction(handler)) {
-      log('message omitted due to no errorHandler!!!');
+      debug('message omitted due to no errorHandler!!!');
       return;
     }
 
     try {
       handler(error);
     } catch (err) {
-      log(`consumerClient handle onError failed due to err => ${JSON.stringify(err)}`);
+      debug(`consumerClient handle onError failed due to err => ${JSON.stringify(err)}`);
     }
   }
 
   private onOffsetOutOfRange(topic: string, offsetHandler: OffsetOutOfRangeHandler) {
     if (!topic) {
-      log('nothing to do due to no topic!!!');
+      debug('nothing to do due to no topic!!!');
       return;
     }
     if (!isFunction(offsetHandler)) {
-      log('no topic to do due to no offsetHandler!!!');
+      debug('no topic to do due to no offsetHandler!!!');
       return;
     }
     try {
       offsetHandler(topic);
     } catch (err) {
-      log(`handle offsetOutOfRange topic failed due to err => ${JSON.stringify(err)}`);
+      debug(`handle offsetOutOfRange topic failed due to err => ${JSON.stringify(err)}`);
     }
   }
 }

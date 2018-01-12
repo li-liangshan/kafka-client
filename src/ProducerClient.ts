@@ -1,60 +1,54 @@
 import * as Kafka from 'kafka-node';
-import debug from 'debug';
+import * as Debug from 'debug';
 import * as _ from 'lodash';
 
-const log = debug('coupler:kafka-mq:ProducerClient');
+const debug = Debug('coupler:kafka-mq:ProducerClient');
 
 export class ProducerClient {
   private closing: boolean = false;
   private connecting: boolean = false;
   private connected: boolean = false;
-  private reconnecting: boolean = false;
 
   private isHighLevel: boolean;
-  private autoReconnectCount: number;
+  private autoReconnect: boolean;
   private producerInstance: any;
   private options: any;
   private kafkaClient: any;
 
-  constructor(options, isHighLevel?: boolean, autoReconnectCount?: number) {
-    this.options = options;
-    this.kafkaClient = options.client;
-    this.isHighLevel = isHighLevel || false;
-    this.autoReconnectCount = autoReconnectCount || 0;
+  constructor(options, isHighLevel: boolean = false, autoReconnect: boolean = false) {
+    this.init(options, isHighLevel, autoReconnect);
   }
 
   async connect() {
     if (this.connecting) {
-      log('connect request ignored. ProducerClient is currently connecting!');
+      debug('connect request ignored. ProducerClient is currently connecting!');
       return;
     }
     this.connecting = true;
-    log(`${this.isHighLevel ? 'HighLevelProducer' : 'Producer'} connecting...`);
+    debug(`${this.isHighLevel ? 'HighLevelProducer' : 'Producer'} connecting...`);
     try {
       this.producerInstance = await this.onConnected();
-      log(`${this.isHighLevel ? 'HighLevelProducer' : 'Producer'} onConnected!`);
+      debug(`${this.isHighLevel ? 'HighLevelProducer' : 'Producer'} onConnected!`);
       this.connected = true;
     } catch (err) {
-      log(`${this.isHighLevel ? 'HighLevelProducer' : 'Producer'} connect failed!!!`);
-      log(`failed err ==> ${JSON.stringify(err)}`);
+      debug(`${this.isHighLevel ? 'HighLevelProducer' : 'Producer'} connect failed!`);
+      debug(`failed err ==> ${JSON.stringify(err)}`);
+      this.connecting = false;
       await this.onReconnecting();
     } finally {
       this.connecting = false;
-      this.reconnecting = false;
     }
   }
 
   async onReconnecting() {
-    if (this.reconnecting) {
-      log('reconnect request ignored. ProducerClient is currently reconnecting!');
+    if (!this.autoReconnect) {
       return;
     }
-    this.reconnecting = true;
-    if (this.autoReconnectCount <= 0) {
+    if (this.connecting) {
+      debug('reconnect request ignored. ProducerClient is currently reconnecting!');
       return;
     }
-    log('start reconnecting [ProducerClient]!!!');
-    this.autoReconnectCount -= 1;
+    debug('start reconnecting [ProducerClient]!!!');
     return this.connect();
   }
 
@@ -67,10 +61,10 @@ export class ProducerClient {
     const producer = new KafkaProducer(this.kafkaClient, this.options.producerOptions, this.options.partitioner);
     return new Promise((resolve, reject) => {
       producer.on('ready', () => {
+        if (!producer) {
+          return reject('producer instance not exits...');
+        }
         resolve(producer);
-      });
-      producer.on('error', (err) => {
-        reject(err);
       });
     });
   }
@@ -85,7 +79,7 @@ export class ProducerClient {
       this.producerInstance = null;
       this.connected = false;
     } catch (err) {
-      log(`close ProducerClient failed; err => ${JSON.stringify(err)}`);
+      debug(`close ProducerClient failed; err => ${JSON.stringify(err)}`);
     } finally {
       this.closing = false;
     }
@@ -100,7 +94,7 @@ export class ProducerClient {
     });
   }
 
-  async createTopics(topics: string[], async: boolean) {
+  async createTopics(topics: string[], async: boolean = true) {
     if (!this.connected) {
       await this.connect();
     }
@@ -118,14 +112,25 @@ export class ProducerClient {
     if (!this.connected) {
       await this.connect();
     }
-    log(`producerClient is sending message = ${JSON.stringify(payloads)}`);
+    debug(`producerClient is sending message = ${JSON.stringify(payloads)}`);
     return new Promise((resolve, reject) => {
       this.producerInstance.send(payloads, (err, data) => {
         if (err) {
-          return reject(err);
+            return reject(err);
         }
         return resolve(data);
+        });
       });
-    });
+  }
+
+  isConnected() {
+    return this.connected;
+  }
+
+ private init(options, isHighLevel, autoReconnect) {
+    this.options = options;
+    this.kafkaClient = options.client;
+    this.isHighLevel = isHighLevel;
+    this.autoReconnect = autoReconnect;
   }
 }

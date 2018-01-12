@@ -1,9 +1,6 @@
 import * as Kafka from 'kafka-node';
 import * as Debug from 'debug';
 import * as _ from 'lodash';
-import { Promise } from 'es6-promise';
-import { resolve } from 'url';
-import { fail } from 'assert';
 
 const debug = Debug('coupler:kafka-mq:ProducerStreamClient');
 
@@ -104,6 +101,13 @@ export class ProducerStreamClient {
     return new Promise((resolve, reject) => {
       this.streamInstance.close(resolve);
     });
+  }
+
+  async getProducerStream() {
+    if (!this.connected || !this.streamInstance) {
+      await this.connect();
+    }
+    return this.streamInstance;
   }
 
 }

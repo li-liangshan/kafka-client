@@ -14,7 +14,10 @@
     "nyc": "^11.4.1"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "tsc -p tsconfig.test.json & DEBUG=LLS:testSpec ava \".test/**/*.spec.js\"",
+    "test:watch": "tsc -p tsconfig.test.json -w & DEBUG=LLS:testSpec ava -w \".test/**/*.spec.js\"",
+    "pretest": "tsc -p tsconfig.test.json",
+    "test:coverage": "TS_NODE_COMPILER=\"@coupler/typescript\" tsc -p tsconfig.test.json && nyc ava \".test/**/*.spec.js\""
   },
   "author": "liliangshan@blacklake.cn",
   "license": "ISC",
@@ -27,7 +30,6 @@
   "ava": {
     "files": ["lib/test/**/*.spec.js"],
     "source": ["lib/**/*.js", "!lib/test/**/*.js"],
-    "require": ["@coupler/runtime"],
     "verbose": true
   }
 }
