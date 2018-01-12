@@ -23,14 +23,8 @@ ava_1.default.afterEach(t => {
 ava_1.default('consumerClient status on connected with different topics, same partitions', (t) => __awaiter(this, void 0, void 0, function* () {
     const client = new Kafka.Client(url);
     const consumerClient = new ConsumerClient_1.ConsumerClient({ client, topics: [
-            {
-                topic: 'topic1',
-                partitions: 0,
-            },
-            {
-                topic: 'topic2',
-                partitions: 0,
-            },
+            { topic: 'topic1', partition: 0 },
+            { topic: 'topic2', partition: 0 },
         ], options: null });
     yield consumerClient.connect();
     t.true(consumerClient.isConnected());
@@ -40,14 +34,8 @@ ava_1.default('consumerClient status on connected with different topics, same pa
 ava_1.default('consumerClient status on connected with different topics, different partitions', (t) => __awaiter(this, void 0, void 0, function* () {
     const client = new Kafka.Client(url);
     const consumerClient = new ConsumerClient_1.ConsumerClient({ client, topics: [
-            {
-                topic: 'topic1',
-                partitions: 0,
-            },
-            {
-                topic: 'topic2',
-                partitions: 1,
-            },
+            { topic: 'topic1', partition: 0 },
+            { topic: 'topic2', partition: 1 },
         ], options: null });
     yield consumerClient.connect();
     t.true(consumerClient.isConnected());
@@ -57,14 +45,8 @@ ava_1.default('consumerClient status on connected with different topics, differe
 ava_1.default('consumerClient status on connected with same topics, different partitions', (t) => __awaiter(this, void 0, void 0, function* () {
     const client = new Kafka.Client(url);
     const consumerClient = new ConsumerClient_1.ConsumerClient({ client, topics: [
-            {
-                topic: 'topic1',
-                partitions: 0,
-            },
-            {
-                topic: 'topic1',
-                partitions: 1,
-            },
+            { topic: 'topic1', partition: 0 },
+            { topic: 'topic1', partition: 1 },
         ], options: null });
     yield consumerClient.connect();
     t.true(consumerClient.isConnected());
@@ -74,14 +56,8 @@ ava_1.default('consumerClient status on connected with same topics, different pa
 ava_1.default('consumerClient status on connected with different topics, same partitions', (t) => __awaiter(this, void 0, void 0, function* () {
     const client = new Kafka.Client(url);
     const consumerClient = new ConsumerClient_1.ConsumerClient({ client, topics: [
-            {
-                topic: 'topic1',
-                partitions: 0,
-            },
-            {
-                topic: 'topic2',
-                partitions: 0,
-            },
+            { topic: 'topic1', partition: 0 },
+            { topic: 'topic2', partition: 0 },
         ], options: null });
     yield consumerClient.connect();
     t.true(consumerClient.isConnected());
@@ -91,39 +67,23 @@ ava_1.default('consumerClient status on connected with different topics, same pa
 ava_1.default('consumerClient status pause and resume', (t) => __awaiter(this, void 0, void 0, function* () {
     const client = new Kafka.Client(url);
     const consumerClient = new ConsumerClient_1.ConsumerClient({ client, topics: [
-            {
-                topic: 'topic1',
-                partitions: 0,
-            },
-            {
-                topic: 'topic2',
-                partitions: 0,
-            },
+            { topic: 'topic1', partition: 0 },
+            { topic: 'topic2', partition: 0 },
         ], options: null });
     yield consumerClient.connect();
-    // const message = await consumerClient.consumeMessage((message) => message);
-    // debug(`message1234==>${JSON.stringify(message)}`);
     t.true(consumerClient.isConnected());
     yield consumerClient.pause();
-    const message1 = yield consumerClient.consumeMessage((message) => debug(`message==>${message}`));
-    debug(`message12345==>${JSON.stringify(message1)}`);
+    yield consumerClient.consumeMessage((message) => debug(`message==>${message}`));
     yield consumerClient.resume();
-    const message2 = yield consumerClient.consumeMessage((message) => debug(`message==>${message}`));
-    debug(`message12345d6==>${JSON.stringify(message2)}`);
+    yield consumerClient.consumeMessage((message) => debug(`message==>${message}`));
     yield consumerClient.close();
     t.false(consumerClient.isConnected());
 }));
 ava_1.default('consumerClient commit', (t) => __awaiter(this, void 0, void 0, function* () {
     const client = new Kafka.Client(url);
     const consumerClient = new ConsumerClient_1.ConsumerClient({ client, topics: [
-            {
-                topic: 'topic1',
-                partitions: 0,
-            },
-            {
-                topic: 'topic2',
-                partitions: 0,
-            },
+            { topic: 'topic1', partition: 0 },
+            { topic: 'topic2', partition: 0 },
         ], options: { autoCommit: false } });
     yield consumerClient.connect();
     t.true(consumerClient.isConnected());
@@ -135,14 +95,8 @@ ava_1.default('consumerClient commit', (t) => __awaiter(this, void 0, void 0, fu
 ava_1.default('consumerClient addTopics topic3 not exists', (t) => __awaiter(this, void 0, void 0, function* () {
     const client = new Kafka.Client(url);
     const consumerClient = new ConsumerClient_1.ConsumerClient({ client, topics: [
-            {
-                topic: 'topic1',
-                partitions: 0,
-            },
-            {
-                topic: 'topic2',
-                partitions: 0,
-            },
+            { topic: 'topic1', partition: 0 },
+            { topic: 'topic2', partition: 0 },
         ], options: { autoCommit: false } });
     try {
         yield consumerClient.connect();
@@ -160,14 +114,8 @@ ava_1.default('consumerClient addTopics topic3 not exists', (t) => __awaiter(thi
 ava_1.default('consumerClient addTopics topic1 exists', (t) => __awaiter(this, void 0, void 0, function* () {
     const client = new Kafka.Client(url);
     const consumerClient = new ConsumerClient_1.ConsumerClient({ client, topics: [
-            {
-                topic: 'topic1',
-                partitions: 0,
-            },
-            {
-                topic: 'topic2',
-                partitions: 0,
-            },
+            { topic: 'topic1', partition: 0 },
+            { topic: 'topic2', partition: 0 },
         ], options: { autoCommit: false } });
     try {
         yield consumerClient.connect();
@@ -185,14 +133,8 @@ ava_1.default('consumerClient addTopics topic1 exists', (t) => __awaiter(this, v
 ava_1.default('consumerClient removeTopics topic1 successful', (t) => __awaiter(this, void 0, void 0, function* () {
     const client = new Kafka.Client(url);
     const consumerClient = new ConsumerClient_1.ConsumerClient({ client, topics: [
-            {
-                topic: 'topic1',
-                partitions: 0,
-            },
-            {
-                topic: 'topic2',
-                partitions: 0,
-            },
+            { topic: 'topic1', partition: 0 },
+            { topic: 'topic2', partition: 0 },
         ], options: { autoCommit: false } });
     try {
         yield consumerClient.connect();
@@ -210,26 +152,83 @@ ava_1.default('consumerClient removeTopics topic1 successful', (t) => __awaiter(
 ava_1.default('consumerClient setOffset successful', (t) => __awaiter(this, void 0, void 0, function* () {
     const client = new Kafka.Client(url);
     const consumerClient = new ConsumerClient_1.ConsumerClient({ client, topics: [
-            {
-                topic: 'topic1',
-                partitions: 0,
-            },
-            {
-                topic: 'topic2',
-                partitions: 0,
-            },
+            { topic: 'topic1', partition: 0, offset: 0 },
+            { topic: 'topic2', partition: 0, offset: 0 },
         ], options: { autoCommit: false } });
-    try {
-        yield consumerClient.connect();
-        t.true(consumerClient.isConnected());
-        yield consumerClient.setOffset('topic1', 0, 14);
-        debug(`setOffset==>${JSON.stringify('setOffset')}`);
-        yield consumerClient.close();
-        t.false(consumerClient.isConnected());
-    }
-    catch (err) {
-        debug(`setOffset err => ${JSON.stringify(err)}`);
-        t.fail();
-    }
+    yield consumerClient.connect();
+    t.true(consumerClient.isConnected());
+    const consumer = yield consumerClient.getConsumer();
+    yield consumerClient.setOffset('topic1', 0, 14);
+    t.is(consumer.payloads[0].offset, 14);
+    yield consumerClient.setOffset('topic2', 0, 13);
+    t.is(consumer.payloads[1].offset, 13);
+    yield consumerClient.close();
+    t.false(consumerClient.isConnected());
+}));
+ava_1.default('consumerClient pauseTopic | resumeTopics successful', (t) => __awaiter(this, void 0, void 0, function* () {
+    const client = new Kafka.Client(url);
+    const consumerClient = new ConsumerClient_1.ConsumerClient({ client, topics: [
+            { topic: 'topic1', partition: 0 },
+            { topic: 'topic2', partition: 0 },
+        ], options: {} }); // groupId 数据格式注意
+    yield consumerClient.connect();
+    t.true(consumerClient.isConnected());
+    const consumer = yield consumerClient.getConsumer();
+    debug(`payloads pause before ===> ${JSON.stringify(consumer.payloads)}`);
+    yield consumerClient.pauseTopics(['topic1']);
+    debug(`payloads pause after ===> ${JSON.stringify(consumer.payloads)}`);
+    yield consumerClient.resumeTopics(['topic1']);
+    debug(`payloads resume ===> ${JSON.stringify(consumer.payloads)}`);
+    yield consumerClient.close();
+    t.false(consumerClient.isConnected());
+}));
+ava_1.default('consumerClient getTopicPayloads successful', (t) => __awaiter(this, void 0, void 0, function* () {
+    const client = new Kafka.Client(url);
+    const consumerClient = new ConsumerClient_1.ConsumerClient({ client, topics: [
+            { topic: 'topic1', partition: 0 },
+            { topic: 'topic2', partition: 0 },
+        ], options: {} }, false);
+    yield consumerClient.connect();
+    t.true(consumerClient.isConnected());
+    const beforeTopicPayloads = yield consumerClient.getTopicPayloads();
+    debug(`topicPayloads pause before ===> ${JSON.stringify(beforeTopicPayloads)}`);
+    yield consumerClient.pauseTopics(['topic1']);
+    const afterTopicPayloads = yield consumerClient.getTopicPayloads();
+    debug(`topicPayloads pause after ===> ${JSON.stringify(afterTopicPayloads)}`);
+    yield consumerClient.resumeTopics(['topic1']);
+    const resumeTopicPayloads = yield consumerClient.getTopicPayloads();
+    debug(`topicPayloads resume ===> ${JSON.stringify(resumeTopicPayloads)}`);
+    yield consumerClient.close();
+    t.false(consumerClient.isConnected());
+}));
+ava_1.default('consumerClient consumeMessage successful', (t) => __awaiter(this, void 0, void 0, function* () {
+    const client = new Kafka.Client(url);
+    const consumerClient = new ConsumerClient_1.ConsumerClient({ client, topics: [
+            { topic: 'topic1', partition: 0 },
+            { topic: 'topic2', partition: 0 },
+        ], options: {} });
+    yield consumerClient.connect();
+    t.true(consumerClient.isConnected());
+    const handler = (message) => {
+        debug(`consume message =>${JSON.stringify(message)}`);
+    };
+    yield consumerClient.consumeMessage(handler);
+    yield consumerClient.close();
+    t.false(consumerClient.isConnected());
+}));
+ava_1.default('consumerClient consumeOffsetOutOfRange successful', (t) => __awaiter(this, void 0, void 0, function* () {
+    const client = new Kafka.Client(url);
+    const consumerClient = new ConsumerClient_1.ConsumerClient({ client, topics: [
+            { topic: 'topic1', partition: 0 },
+            { topic: 'topic2', partition: 0 },
+        ], options: {} });
+    yield consumerClient.connect();
+    t.true(consumerClient.isConnected());
+    const offsetHandler = (error) => {
+        debug(`consumeOffsetOutOfRange err =>${JSON.stringify(error)}`);
+    };
+    yield consumerClient.consumeOffsetOutOfRange(offsetHandler);
+    yield consumerClient.close();
+    t.false(consumerClient.isConnected());
 }));
 //# sourceMappingURL=ConsumerClient.spec.js.map

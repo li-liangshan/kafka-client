@@ -12,7 +12,7 @@ export class ProducerStreamClient {
   streamInstance: any = null;
   autoReconnectCount: number;
   private options: any;
-  constructor(options: any, autoReconnectCount: number = 0) {
+  constructor(options?: any, autoReconnectCount: number = 0) {
     this.options = options;
     this.autoReconnectCount = autoReconnectCount;
   }
@@ -108,6 +108,10 @@ export class ProducerStreamClient {
       await this.connect();
     }
     return this.streamInstance;
+  }
+
+  isConnected() {
+    return this.connected;
   }
 
 }

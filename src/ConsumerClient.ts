@@ -8,8 +8,13 @@ const debug = Debug('LLS:testSpec');
 
 export type MessageHandler = (message: any) => void;
 export type ErrorHandler = (error: any) => void;
-export type OffsetOutOfRangeHandler = (topic: string) => void;
+export type OffsetOutOfRangeHandler = (err: string) => void;
 
+/****************************************************************
+ *** HighLevelConsumer has been deprecated in the latest version
+ *** of Kafka (0.10.1) and is likely to be removed in the future.
+ *** Please use the ConsumerGroup instead
+ ****************************************************************/
 export class ConsumerClient {
   closing: boolean = false;
   connecting: boolean = false;
@@ -184,18 +189,18 @@ export class ConsumerClient {
     if (!this.connected) {
       await this.connect();
     }
-    if (topic.trim()) {
+    if (!topic.trim()) {
       debug('ConsumerClient no topic removed due to no topics!');
       throw new Error('topic can not be \' \'');
     }
     return this.consumerInstance.setOffset(topic, partition, offset);
   }
 
-  async pauseTopic(topics: string[]) {
+  async pauseTopics(topics: string[]) {
     if (!this.connected) {
       await this.connect();
     }
-    return this.consumerInstance.pauseTopic(topics);
+    return this.consumerInstance.pauseTopics(topics);
   }
 
   async resumeTopics(topics: string[]) {
@@ -210,20 +215,16 @@ export class ConsumerClient {
       await this.connect();
     }
     if (!this.isHighLevel) {
-      debug('topic payloads can not be obtained due to not HighLevelConsumer');
-      return;
+      return this.consumerInstance.payloads;
     }
     return this.consumerInstance.getTopicPayloads();
   }
 
-  async consumeMessage(handler: MessageHandler) {
+  async consumeMessage(handler?: MessageHandler) {
     if (!this.connected) {
       await this.connect();
     }
-    return new Promise((resolve, reject) => {
-      this.consumerInstance.on('message', (message) => resolve(message));
-    });
-    // return this.consumerInstance.on('message', (message) => this.createMessageHandler(handler));
+    return this.consumerInstance.on('message', (message) => this.createMessageHandler(handler));
   }
 
   async handleError(errorHandler: ErrorHandler) {
@@ -237,7 +238,14 @@ export class ConsumerClient {
     if (!this.connected) {
       await this.connect();
     }
-    return this.consumerInstance.on('offsetOutOfRange', (topic) => this.createOffsetOutOfRange(topic));
+    return this.consumerInstance.on('offsetOutOfRange', (err) => this.createOffsetOutOfRange(err));
+  }
+
+  async getConsumer() {
+    if (!this.connected) {
+      await this.connect();
+    }
+    return this.consumerInstance;
   }
 
   private async createMessageHandler(handler: MessageHandler) {
@@ -252,7 +260,7 @@ export class ConsumerClient {
 
   private async createOffsetOutOfRange(offsetHandler: OffsetOutOfRangeHandler) {
     debug('start to create offsetOutOfRangeHandler!');
-    return (topic) => this.onOffsetOutOfRange(topic, offsetHandler);
+    return (err) => this.onOffsetOutOfRange(err, offsetHandler);
   }
 
   private onMessage(message: any, handler: MessageHandler) {
@@ -291,17 +299,17 @@ export class ConsumerClient {
     }
   }
 
-  private onOffsetOutOfRange(topic: string, offsetHandler: OffsetOutOfRangeHandler) {
-    if (!topic) {
-      debug('nothing to do due to no topic!!!');
+  private onOffsetOutOfRange(error: any, offsetHandler: OffsetOutOfRangeHandler) {
+    if (!error) {
+      debug('nothing to do due to no err!!!');
       return;
     }
     if (!isFunction(offsetHandler)) {
-      debug('no topic to do due to no offsetHandler!!!');
+      debug('nothing to do due to no offsetHandler!!!');
       return;
     }
     try {
-      offsetHandler(topic);
+      offsetHandler(error);
     } catch (err) {
       debug(`handle offsetOutOfRange topic failed due to err => ${JSON.stringify(err)}`);
     }

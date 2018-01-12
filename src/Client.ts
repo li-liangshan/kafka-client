@@ -176,9 +176,9 @@ export class Client extends EventEmitter {
     this.consumerGroupStreamTransforms = new Map<string, Transform>();
   }
 
-  async addProducerClient(producerId: string, options, isHighLevel: boolean = false, autoConnectCount: number = 0) {
+  async addProducerClient(producerId: string, options, isHighLevel: boolean = false, autoConnect: boolean = false) {
     await this.checkExists(this.producerClients, producerId, 'producer');
-    const producerClient = new ProducerClient(options, isHighLevel, autoConnectCount);
+    const producerClient = new ProducerClient(options, isHighLevel, autoConnect);
     this.producerClients.set(producerId, producerClient);
   }
 
