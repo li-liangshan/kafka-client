@@ -1,3 +1,10 @@
+/* *******************************************
+ * @Author: liliangshan
+ * @Date: 2018-01-14 13:46:19
+ * @Last Modified by: liliangshan
+ * @Last Modified time: 2018-01-15 14:46:56
+ * *******************************************/
+
 import * as Kafka from 'kafka-node';
 import * as Debug from 'debug';
 import * as _ from 'lodash';
@@ -121,7 +128,26 @@ export class ConsumerStreamClient {
     if (!this.connected || !this.streamInstance) {
       await this.connect();
     }
-    return this.streamInstance.on('message', (message) => this.createMessageHandler(handler));
+    return new Promise((resolve, reject) => {
+      this.streamInstance.on('data', (err, message) => {
+        if (err) {
+          return reject(err);
+        }
+        resolve(message);
+      });
+    });
+    // .then((msg) => this.createMessageHandler(handler));
+  }
+
+  isConnected() {
+    return this.connected;
+  }
+
+  async getConsumerStream() {
+    if (!this.connected || !this.streamInstance) {
+      await this.connect();
+    }
+    return this.streamInstance;
   }
 
   private async createMessageHandler(handler) {

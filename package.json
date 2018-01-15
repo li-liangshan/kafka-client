@@ -14,8 +14,9 @@
     "nyc": "^11.4.1"
   },
   "scripts": {
-    "test": "tsc -p tsconfig.test.json & DEBUG=LLS:testSpec ava \".test/**/*.spec.js\"",
-    "test:watch": "tsc -p tsconfig.test.json -w & DEBUG=LLS:testSpec ava -w \".test/**/*.spec.js\"",
+    "spec": "tsc -p tsconfig.test.json & DEBUG=* node ./.test/test/Spec.js",
+    "test": "tsc -p tsconfig.test.json & DEBUG=LLS:testSpec* ava \".test/**/ConsumerStreamClient.spec.js\"",
+    "test:watch": "tsc -p tsconfig.test.json -w & DEBUG=LLS:testSpec* ava -w \".test/**/ConsumerStreamClient.spec.js\"",
     "pretest": "tsc -p tsconfig.test.json",
     "test:coverage": "TS_NODE_COMPILER=\"@coupler/typescript\" tsc -p tsconfig.test.json && nyc ava \".test/**/*.spec.js\""
   },

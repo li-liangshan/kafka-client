@@ -1,0 +1,124 @@
+/// <reference types="node" />
+import { EventEmitter } from 'events';
+import { Readable } from 'stream';
+export interface IKafkaOptions {
+    clientId?: string;
+    sslOptions?: any;
+    ssl?: boolean;
+    kafkaHost?: string;
+    connectTimeout?: number;
+    requestTimeout?: number;
+    idleConnection?: number;
+    autoConnect?: boolean;
+    versions?: {
+        disabled?: boolean;
+        requestTimeout?: boolean;
+    };
+    connectRetryOptions?: {
+        retries?: number;
+        factor?: number;
+        minTimeout?: number;
+        maxTimeout?: number;
+        randomize?: boolean;
+    };
+    maxAsyncRequests?: number;
+}
+export interface ISendRequest {
+    payloads?: any;
+    requireAcks?: number;
+    ackTimeoutMs?: number;
+}
+export interface IFetchRequest {
+    consumer: any;
+    payloads?: any;
+    fetchMaxWaitMs?: number;
+    fetchMinBytes?: number;
+    maxTickMessages?: number;
+}
+export declare class Client extends EventEmitter {
+    closing: boolean;
+    connecting: boolean;
+    connected: boolean;
+    options: IKafkaOptions;
+    private clientInstance;
+    private producerClients;
+    private consumerClients;
+    private consumerGroupClients;
+    private consumerStreamClients;
+    private consumerGroupStreamClients;
+    private producerStreamClients;
+    private producerStreamTransforms;
+    private consumerStreamTransforms;
+    private consumerGroupStreamTransforms;
+    private offsetClients;
+    private adminClients;
+    private clientId;
+    constructor(options: IKafkaOptions);
+    connect(): Promise<void>;
+    onConnected(): Promise<any>;
+    close(): Promise<{}>;
+    onClosed(instance?: any): Promise<{}>;
+    checkOrConnect(funName: string): Promise<void>;
+    init(options: any): Promise<void>;
+    addProducerClient(producerId: string, options: any, isHighLevel?: boolean, autoConnect?: boolean): Promise<void>;
+    getProducerClient(producerId: any): Promise<any>;
+    getProducerClientMap(): Promise<Map<string, any>>;
+    addConsumerClient(consumerId: any, options: any, isHighLevel: any, autoReconnectCount: any): Promise<void>;
+    getConsumerClient(consumerId: any): Promise<any>;
+    getConsumerClientMap(): Promise<Map<string, any>>;
+    addConsumerGroupClient(groupId: any, options: any, topics: any): Promise<void>;
+    getConsumerGroupClient(groupId: any): Promise<any>;
+    getConsumerGroupClientMap(): Promise<Map<string, any>>;
+    addConsumerStreamClient(consumerStreamId: any, options: any, topics: any): Promise<void>;
+    getConsumerStreamClient(consumerStreamId: any): Promise<any>;
+    getConsumerStreamClientMap(): Promise<Map<string, any>>;
+    addConsumerGroupStreamClients(groupStreamId: any, options: any, topics: any): Promise<void>;
+    getConsumerGroupStreamClient(groupStreamId: any): Promise<any>;
+    getConsumerGroupStreamClientMap(): Promise<Map<string, any>>;
+    addProducerStreamClient(producerStreamId: any, options: any, autoReconnectCount: any): Promise<void>;
+    getProducerStreamClient(producerStreamId: any): Promise<any>;
+    getProducerStreamClientMap(): Promise<Map<string, any>>;
+    addOffsetClient(offsetId: any, options: any): Promise<void>;
+    getOffsetClient(offsetId: any): Promise<any>;
+    getOffsetClientMap(): Promise<Map<string, any>>;
+    addAdminClient(adminId: any, options: any): Promise<void>;
+    getAdminClient(adminId: any): Promise<any>;
+    getAdminClientMap(): Promise<Map<string, any>>;
+    sendProducerMessage(producerId: any, payloads: any): Promise<{}>;
+    createProducerTopics(producerId: any, topics: any, async: any): Promise<{}>;
+    pauseConsumer(consumerId: any): Promise<any>;
+    closeConsumer(consumerId: any, force: any): Promise<any>;
+    resumeConsumer(consumerId: any): Promise<any>;
+    commitConsumer(consumerId: any, force: any): Promise<any>;
+    addConsumerTopics(consumerId: any, topics: any, fromOffset: any): Promise<any>;
+    removeConsumerTopics(consumerId: any, topics: any): Promise<any>;
+    setConsumerOffset(consumerId: any, topic: any, partition: any, offset: any): Promise<any>;
+    pauseConsumerTopic(consumerId: any, topics: any): Promise<any>;
+    resumeConsumerTopics(consumerId: any, topics: any): Promise<any>;
+    consumeMessage(consumerId: any, handler: any): Promise<any>;
+    consumeOffsetOutOfRange(consumerId: any, offsetHandler: any): Promise<any>;
+    handleConsumerError(consumerId: any, errorHandler: any): Promise<any>;
+    sendConsumerGroupOffsetCommitRequest(groupId: any, commits: any): Promise<any>;
+    addConsumerGroupTopics(groupId: any, topics: any): Promise<any>;
+    scheduleConsumerGroupReconnect(timeout: number): Promise<any>;
+    setProducerTransform(transformName: any, transFormOptions: any): Promise<void>;
+    updateProducerTransform(transformName: any, transFormOptions: any): Promise<void>;
+    deleteProducerTransform(transformName: any): Promise<any>;
+    sendStream(streamSource: Readable, producerId: any, transformName?: any): Promise<any>;
+    createConsumerCommitStream(consumerStreamId: any, options: any): Promise<any>;
+    consumeStreamMessage(consumerStreamId: any, handler: any): Promise<any>;
+    consumeGroupStream(groupStreamId: any, destStream: any, transformName?: any): Promise<any>;
+    offsetClose(offsetId: any): Promise<any>;
+    offsetFetch(offsetId: any, payloads: any): Promise<any>;
+    offsetCommit(offsetId: any, groupId: any, payloads: any): Promise<any>;
+    offsetFetchCommits(offsetId: any, groupId: any, payloads: any): Promise<any>;
+    fetchLatestOffsets(offsetId: any, topics: any): Promise<any>;
+    fetchEarliestOffsets(offsetId: any, topics: any): Promise<any>;
+    listGroups(adminId: any): Promise<any>;
+    describeGroups(adminId: any, consumerGroups: any): Promise<any>;
+    private getConsumerClientInstance(consumerId);
+    private checkExists(mapInstance, primaryId, entityType);
+    private getMapItem(mapInstance, primaryId);
+    private deleteMapItem(mapInstance, primaryId);
+    private checkMapInstanceExists(mapInstance);
+}
