@@ -203,9 +203,26 @@ ava_1.default('consumerClient getTopicPayloads successful', (t) => __awaiter(thi
 }));
 ava_1.default('consumerClient consumeMessage successful', (t) => __awaiter(this, void 0, void 0, function* () {
     const client = new Kafka.Client(url);
+    const producer = new Kafka.Producer(client);
+    const km = new Kafka.KeyedMessage('ky', 'message');
+    const payloads = [
+        { topic: 'topic-noded', messages: ['hello', 'world', km], partition: 0 },
+    ];
+    yield new Promise((resolve, reject) => {
+        producer.on('ready', () => {
+            producer.send(payloads, (err, data) => {
+                if (err) {
+                    debug(`send km message failed ===> ${JSON.stringify(err)}`);
+                    return reject(err);
+                }
+                debug(`send successful ${JSON.stringify(data)}`);
+                resolve(data);
+            });
+        });
+    });
     const consumerClient = new ConsumerClient_1.ConsumerClient({ client, topics: [
             { topic: 'topic1', partition: 0 },
-            { topic: 'topic2', partition: 0 },
+            { topic: 'topic-noded', partition: 0 },
         ], options: {} });
     yield consumerClient.connect();
     t.true(consumerClient.isConnected());
@@ -213,8 +230,6 @@ ava_1.default('consumerClient consumeMessage successful', (t) => __awaiter(this,
         debug(`consume message =>${JSON.stringify(message)}`);
     };
     yield consumerClient.consumeMessage(handler);
-    yield consumerClient.close();
-    t.false(consumerClient.isConnected());
 }));
 ava_1.default('consumerClient consumeOffsetOutOfRange successful', (t) => __awaiter(this, void 0, void 0, function* () {
     const client = new Kafka.Client(url);

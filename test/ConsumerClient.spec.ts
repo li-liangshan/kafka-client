@@ -208,9 +208,26 @@ test('consumerClient getTopicPayloads successful', async (t) => {
 
 test('consumerClient consumeMessage successful', async (t) => {
   const client = new Kafka.Client(url);
+  const producer = new Kafka.Producer(client);
+  const km = new Kafka.KeyedMessage('ky', 'message');
+  const payloads = [
+    { topic: 'topic-noded', messages: ['hello', 'world', km], partition: 0 },
+  ];
+  await new Promise((resolve, reject) => {
+    producer.on('ready', () => {
+      producer.send(payloads, (err, data) => {
+        if (err) {
+          debug(`send km message failed ===> ${JSON.stringify(err)}`);
+          return reject(err);
+        }
+        debug(`send successful ${JSON.stringify(data)}`);
+        resolve(data);
+      });
+    });
+  });
   const consumerClient = new ConsumerClient({ client, topics: [
     { topic: 'topic1', partition: 0 },
-    { topic: 'topic2', partition: 0 },
+    { topic: 'topic-noded', partition: 0 },
   ], options: {}});
   await consumerClient.connect();
   t.true(consumerClient.isConnected());
@@ -218,8 +235,6 @@ test('consumerClient consumeMessage successful', async (t) => {
     debug(`consume message =>${JSON.stringify(message)}`);
   };
   await consumerClient.consumeMessage(handler);
-  await consumerClient.close();
-  t.false(consumerClient.isConnected());
 });
 
 test('consumerClient consumeOffsetOutOfRange successful', async (t) => {
